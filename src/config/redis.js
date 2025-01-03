@@ -1,11 +1,12 @@
 const redis = require('redis');
+let isClientClosed = true;
 
 const client = redis.createClient({
     socket:{
         host: process.env.REDIS_HOST,
         port: process.env.REDIS_PORT,
-        passowrd: process.env.REDIS_PASS
-    }
+    },
+    password: process.env.REDIS_PASS,
 });
 
 
@@ -14,11 +15,14 @@ async function  ConnectRedis(){
         console.log("Error while connecting to redis: error ->"+err);
     });
     await client.connect();
+    isClientClosed = false;
     console.log("Connected to redis");
     return client;
 }
 
 const shutdown = async (signal) => {
+    if (isClientClosed) return; // Exit if the client is already closed
+    isClientClosed = true;
     console.log(`Received ${signal}. Closing Redis connection...`);
     try {
       await client.quit();
